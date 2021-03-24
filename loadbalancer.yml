@@ -1,0 +1,67 @@
+- hosts: webserver
+  tasks:
+          - name: "Installing HTTPD Software"
+            package:
+                    name: "httpd"
+                    state: present
+          - name: "Installing PHP Software"
+            package:
+                    name: "php"
+                    state: present
+          - name: "Copying file to Document Root"
+            copy:
+                    dest: "/var/www/html/"
+                    src: "index.php"
+          - name: "Enabling Firewall Services to Port 80"
+            firewalld:
+                    port: "80/tcp"
+                    state: enabled
+                    permanent: yes
+                    immediate: yes
+          - name: "Starting Webserver"
+            service:
+                    name: "httpd"
+                    state: restarted
+
+- hosts: mylb
+  tasks:
+          - name: "Creating Directory"
+            file:
+                    state: directory
+                    path: "/dvd1"
+          - name: "Mounting CDROM"
+            mount:
+                    src: "/dev/cdrom"
+                    path: "/dvd1"
+                    state: mounted
+                    fstype: "iso9660"
+          - name: "Creating Yum Repo"
+            yum_repository:
+                    baseurl: "/dvd1/AppStream"
+                    name: "dvd1"
+                    description: "my yum dvd1 for package"
+                    gpgcheck: no
+          - name: "Creating Another Yum Repo"
+            yum_repository:
+                    baseurl: "/dvd1/BaseOS"
+                    name: "dvd2"
+                    description: "my yum dvd2 for package"
+                    gpgcheck: no
+          - name: "Install HaProxy Software"
+            package:
+                    name: "haproxy"
+                    state: present
+          - name: "Copying Configuration File"
+            template:
+                    dest: "/etc/haproxy/haproxy.cfg"
+                    src: "haproxy.cfg"
+          - name: "Disabling Load Balancer Firewall"
+            firewalld:
+                    port: "5000/tcp"
+                    state: enabled
+                    permanent: yes
+                    immediate: yes
+          - name: "Starting Load Balancer Services"
+            service:
+                    name: "haproxy"
+                    state: restarted
